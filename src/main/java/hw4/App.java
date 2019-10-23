@@ -15,6 +15,7 @@ import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.BinaryExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.visitor.VoidVisitor;
 import com.github.javaparser.resolution.types.ResolvedType;
 import com.github.javaparser.symbolsolver.JavaSymbolSolver;
 import com.github.javaparser.symbolsolver.javaparsermodel.JavaParserFacade;
@@ -48,10 +49,13 @@ public class App
 
         CompilationUnit cu = StaticJavaParser.parse(new File("./src/main/java/hw4/Source.java"));
 
-        cu.findAll(BinaryExpr.class).forEach(be -> {
-            // .describe() gives name of type
-            if(be.getLeft().calculateResolvedType().describe().equals("java.lang.String"))
-                System.out.println(be.getLeft().calculateResolvedType().describe());
-        });
+        VoidVisitor<?> methodCallVisitor = new BadPatternFinder();
+        methodCallVisitor.visit(cu, null);
+
+//        cu.findAll(BinaryExpr.class).forEach(be -> {
+//            // .describe() gives name of type
+//            if(be.getLeft().calculateResolvedType().describe().equals("java.lang.String"))
+//                System.out.println(be.getLeft().calculateResolvedType().describe());
+//        });
     }
 }
