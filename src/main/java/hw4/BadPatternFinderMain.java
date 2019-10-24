@@ -40,6 +40,18 @@ public class BadPatternFinderMain
         while(fileIterator.hasNext()) {
             File to_check = (File) fileIterator.next();
             CompilationUnit cu = StaticJavaParser.parse(to_check);
+            // Bad string
+            // checks if strings are compared using == or != instead of equals()
+            cu.findAll(BinaryExpr.class).forEach(ae -> {
+                  if (ae.getLeft().calculateResolvedType().describe().equals("java.lang.String") && ae.getRight().calculateResolvedType().describe().equals("java.lang.String")){
+                      //ResolvedType resolvedType = ae.calculateResolvedType();
+                      System.out.println("checks if strings are compared using == or != instead of equals()");
+                      System.out.println("-----------------------------------------------------------------");
+                      System.out.println("Error found in line : " + ae.getRange() + "in " +  to_check.getPath());
+                      System.out.println("Tests for string comparsion should not use == or !=. The equals() should be used instead.");
+                  }
+                  //System.out.println(ae.toString() + " is a: " + resolvedType);
+                 });
             VoidVisitor<String> badPatternVisitor = new BadPatternFinder();
             badPatternVisitor.visit(cu, to_check.getPath());
         }
