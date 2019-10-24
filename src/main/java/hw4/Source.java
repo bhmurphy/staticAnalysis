@@ -9,7 +9,7 @@ public class Source {
             System.out.println("Yep");
     }
 
-    public void blah(){
-
+    public String tostring(){
+        return "yeah";
     }
 }
