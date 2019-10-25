@@ -6,6 +6,7 @@ public class testpattern2_1 {
     // Test for the most common general case
     public void test1() {
         String x = "foo";
+        // We should report this
         if(x.equals(null))
             System.out.println("We did a bad thing.");
     }
@@ -14,6 +15,7 @@ public class testpattern2_1 {
     // (It'll also cause an NPE)
     public void test2() {
         testpattern2_A a = null;
+        // We should report this
         if(a.equals(null)) {
             System.out.println("We did an even worse thing.");
         }
@@ -22,6 +24,7 @@ public class testpattern2_1 {
     public void test3() {
         String hey = "Hey";
         String you = "You";
+        // We should NOT report this
         if(hey.equals(you)) {
             System.out.println("This should not cause an error.");
         }

@@ -2,13 +2,17 @@ package testpatterns;
 
 public class testpattern2_2 {
 
+    // Test case showing we should find the pattern when a variable obtained through
+    // a function call is using .equals
     private testpattern2_B aInstance;
 
     public void test1() {
         // We should do this with variables received through function calls as well
+        // We should report this
         if(toString().equals(null)) {
             System.out.println("We did a bad thing.");
         }
+        // We should report this
         if(getB().equals(null)) {
             System.out.println("We did a bad thing. Same as above.");
         }
@@ -16,6 +20,7 @@ public class testpattern2_2 {
 
     public void test2() {
         testpattern2_D d_instance = new testpattern2_D();
+        // We should report this
         if(d_instance.getCInstance().getBInstance().getAInstance().equals(null)) {
             System.out.println("We did a bad and confusing thing");
         }

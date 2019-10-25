@@ -2,6 +2,7 @@ package testpatterns;
 
 // Test case for when the .equals() method compares to null
 // Exploring patterns other than only an if statement of a boolean
+// We should report all calls to .equals in this method
 public class testpattern2_3 {
     private int x;
 
