@@ -8,6 +8,27 @@ import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 
 public class BadPatternFinder extends VoidVisitorAdapter<String> {
 
+    // String equality checker
+    @Override
+    public void visit(BinaryExpr be, String filename) {
+        super.visit(be, filename);
+        BinaryExpr.Operator operator = be.getOperator();
+
+
+        if(operator.equals(BinaryExpr.Operator.EQUALS) || operator.equals(BinaryExpr.Operator.NOT_EQUALS)) {
+            if (be.getLeft().calculateResolvedType().describe().equals("java.lang.String") && be.getRight().calculateResolvedType().describe().equals("java.lang.String")) {
+                System.out.println("Error: Strings compared using " + operator.asString()  + " instead of equals()");
+                System.out.println("-----------------------------------------------------------------");
+                System.out.println("Error found in: " + filename);
+                System.out.println("Tests for string comparsion should not use == or !=. The equals() should be used instead.");
+                if(be.getRange().isPresent()) {
+                    System.out.println("Pattern found at: " + be.getRange().get().begin + ": " + be.toString());
+                }
+                System.out.println("-----------------------------------------------------------------\n");
+            }
+        }
+    }
+
     // Equals null checker
     // https://pmd.github.io/latest/pmd_rules_java_errorprone.html#equalsnull
     @Override
@@ -20,7 +41,7 @@ public class BadPatternFinder extends VoidVisitorAdapter<String> {
             if(me.getArguments().size() > 0) {
                 // Check if we're comparing our caller with null
                 if(me.getArguments().get(0) instanceof NullLiteralExpr) {
-                    System.out.println("Checking for equality to null using .equals()");
+                    System.out.println("Error: Checking for equality to null using .equals()");
                     System.out.println("-----------------------------------------------------------------");
                     System.out.println("Error found in: " + filename);
                     System.out.println("Tests for null should not use the equals() method. The ‘==’ operator should be used instead.");
@@ -46,7 +67,7 @@ public class BadPatternFinder extends VoidVisitorAdapter<String> {
                 if (md.getParentNode().get() instanceof ClassOrInterfaceDeclaration) {
                     ClassOrInterfaceDeclaration classDecl = (ClassOrInterfaceDeclaration) md.getParentNode().get();
                     String className = "Class " + classDecl.getNameAsString();
-                    System.out.println(className + " defines " + methodName + "; should it be toString()?");
+                    System.out.println("Error: " + className + " defines " + methodName + "; should it be toString()?");
                     System.out.println("-----------------------------------------------------------------");
                     System.out.println("Error found in: " + filename);
                     System.out.println("This class defines a method called tostring(). This method does not override the" +

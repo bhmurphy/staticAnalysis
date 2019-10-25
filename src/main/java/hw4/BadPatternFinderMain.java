@@ -3,7 +3,10 @@ package hw4;
 import java.io.File;
 import java.io.FileNotFoundException;
 
+import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
+
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.visitor.VoidVisitor;
@@ -13,47 +16,63 @@ import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSol
 import com.github.javaparser.symbolsolver.resolution.typesolvers.JavaParserTypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.filefilter.SuffixFileFilter;
-import org.apache.commons.io.filefilter.TrueFileFilter;
+import org.apache.commons.io.filefilter.*;
 
 
-public class BadPatternFinderMain
-{
-    public static void main( String[] args ) throws FileNotFoundException
-    {
+public class BadPatternFinderMain {
+
+    public static void main( String[] args ) throws FileNotFoundException {
+        if(args.length == 0) {
+            System.out.println("Please provide a directory to analyze");
+            System.exit(1);
+        }
+
         // Requires this boilerplate nonsense to do type checking
         // See page 48 of the textbook
         TypeSolver reflectionTypeSolver = new ReflectionTypeSolver();
-        // args[0] is the argument you pass in to tell which directory the files you're evaluating are in
-        TypeSolver javaParserTypeSolver = new JavaParserTypeSolver(new File(args[0]));
         reflectionTypeSolver.setParent(reflectionTypeSolver);
+
         CombinedTypeSolver combinedTypeSolver = new CombinedTypeSolver();
         combinedTypeSolver.add(reflectionTypeSolver);
-        combinedTypeSolver.add(javaParserTypeSolver);
-        JavaSymbolSolver symbolSolver = new JavaSymbolSolver(combinedTypeSolver);
-        StaticJavaParser.getConfiguration().setSymbolResolver(symbolSolver);
 
-        // We want to iterate through all files given in the first argument of the method call
-        Iterator fileIterator = FileUtils.iterateFiles(new File(args[0]), new SuffixFileFilter(".java"),
-                TrueFileFilter.INSTANCE);
+        // args[0] is the argument you pass in to tell which directory the files you're evaluating are in
+        // We want to add all folders in the given path that are named "java" to the type solver
+        Collection<File> directories;
+        try {
+            directories = FileUtils.listFilesAndDirs(new File(args[0]), new NotFileFilter(TrueFileFilter.INSTANCE),
+                    DirectoryFileFilter.DIRECTORY);
 
-        while(fileIterator.hasNext()) {
-            File to_check = (File) fileIterator.next();
-            CompilationUnit cu = StaticJavaParser.parse(to_check);
-            // Bad string
-            // checks if strings are compared using == or != instead of equals()
-            cu.findAll(BinaryExpr.class).forEach(ae -> {
-                  if (ae.getLeft().calculateResolvedType().describe().equals("java.lang.String") && ae.getRight().calculateResolvedType().describe().equals("java.lang.String")){
-                      //ResolvedType resolvedType = ae.calculateResolvedType();
-                      System.out.println("checks if strings are compared using == or != instead of equals()");
-                      System.out.println("-----------------------------------------------------------------");
-                      System.out.println("Error found in line : " + ae.getRange() + "in " +  to_check.getPath());
-                      System.out.println("Tests for string comparsion should not use == or !=. The equals() should be used instead.");
-                  }
-                  //System.out.println(ae.toString() + " is a: " + resolvedType);
-                 });
-            VoidVisitor<String> badPatternVisitor = new BadPatternFinder();
-            badPatternVisitor.visit(cu, to_check.getPath());
+            if(directories.size() == 0) {
+                System.out.println("The directory you passed does not have a java folder in its src directory, which is required for the JavaParser extension.");
+                System.exit(1);
+            }
+
+            for(File directory: directories) {
+                if(directory.getName().equals("java")) {
+                    TypeSolver javaParserTypeSolver = new JavaParserTypeSolver(new File(directory.getPath()));
+                    combinedTypeSolver.add(javaParserTypeSolver);
+                }
+            }
+
+            JavaSymbolSolver symbolSolver = new JavaSymbolSolver(combinedTypeSolver);
+            StaticJavaParser.getConfiguration().setSymbolResolver(symbolSolver);
+
+            // We want to iterate through all files given in the first argument of the method call
+            Iterator fileIterator = FileUtils.iterateFiles(new File(args[0]), new SuffixFileFilter(".java"),
+                    TrueFileFilter.INSTANCE);
+
+            // Check every file
+            while(fileIterator.hasNext()) {
+                File to_check = (File) fileIterator.next();
+                CompilationUnit cu = StaticJavaParser.parse(to_check);
+                VoidVisitor<String> badPatternVisitor = new BadPatternFinder();
+                badPatternVisitor.visit(cu, to_check.getPath());
+            }
         }
+        catch(IllegalArgumentException e) {
+            System.out.println(args[0] + " is not a valid directory. Please pass in the directory of your java project.");
+            System.exit(1);
+        }
+
     }
 }
