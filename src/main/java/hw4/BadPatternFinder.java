@@ -1,5 +1,6 @@
 package hw4;
 
+import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.*;
@@ -64,20 +65,35 @@ public class BadPatternFinder extends VoidVisitorAdapter<String> {
 
         if(methodName.equalsIgnoreCase("tostring") && !methodName.equals("toString")) {
             if (md.getParentNode().isPresent()) {
+                // Only care if toString is part of a class/interface of some kind
+                // These two cases should cover that
                 if (md.getParentNode().get() instanceof ClassOrInterfaceDeclaration) {
                     ClassOrInterfaceDeclaration classDecl = (ClassOrInterfaceDeclaration) md.getParentNode().get();
-                    String className = "Class " + classDecl.getNameAsString();
-                    System.out.println("Error: " + className + " defines " + methodName + "; should it be toString()?");
-                    System.out.println("-----------------------------------------------------------------");
-                    System.out.println("Error found in: " + filename);
-                    System.out.println("This class defines a method called tostring(). This method does not override the" +
-                            "toString() method in java.lang.Object, which is probably what was intended.");
-                    if(md.getRange().isPresent()) {
-                        System.out.println("Pattern found at: " + md.getRange().get().begin + ": " + md.getDeclarationAsString());
-                    }
-                    System.out.println("-----------------------------------------------------------------\n");
+                    String className;
+                    if(classDecl.isInterface())
+                        className = "Interface " + classDecl.getNameAsString();
+                    else
+                        className = "Class " + classDecl.getNameAsString();
+                    printToStringViolation(filename, methodName,className, md);
+                }
+                // This would be true if we were creating an anonymous class
+                else if(md.getParentNode().get() instanceof ObjectCreationExpr) {
+                    String className = "Anonymous class declaration";
+                    printToStringViolation(filename, methodName,className, md);
                 }
             }
         }
+    }
+
+    public void printToStringViolation(String filename, String methodName, String className, MethodDeclaration nd) {
+        System.out.println("Error: " + className + " defines " + methodName + "(); should it be toString()?");
+        System.out.println("-----------------------------------------------------------------");
+        System.out.println("Error found in: " + filename);
+        System.out.println("This class defines a method called " + methodName + "(). This method does not override the" +
+                "toString() method in java.lang.Object, which is probably what was intended.");
+        if(nd.getRange().isPresent()) {
+            System.out.println("Pattern found at: " + nd.getRange().get().begin + ": " + nd.getDeclarationAsString());
+        }
+        System.out.println("-----------------------------------------------------------------\n");
     }
 }
