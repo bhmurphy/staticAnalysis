@@ -1,3 +1,5 @@
+# bugfinder Java Static Analysis Tool
+
 In order to run our tool, run:
 
 `java -jar bugfinder.jar srcDir`
